@@ -168,6 +168,40 @@ csv %>%
   caption = "Data from ATUS",
 ) 
 
+# Median 
+csv %>%
+  filter(year > 2005) %>%
+  filter(year < 2011) %>%
+  group_by(year, gender) %>%
+  summarize(median(bls_leis)) %>%
+  clean_names() %>%
+  ggplot(aes(x = year, y = median_bls_leis)) +
+  geom_line() +
+  facet_wrap(~ gender) +
+  labs(
+  title = "Median annual individual leisure hours by gender",
+  y = "Annual Hours",
+  x = "Year",
+  caption = "Data from ATUS",
+) 
+
+# Mean
+csv %>%
+  filter(year > 2005) %>%
+  filter(year < 2011) %>%
+  group_by(year, gender) %>%
+  summarize(mean(bls_leis)) %>%
+  clean_names() %>%
+  ggplot(aes(x = year, y = mean_bls_leis)) +
+  geom_line() +
+  facet_wrap(~ gender) +
+  labs(
+  title = "Mean annual individual leisure hours by gender",
+  y = "Annual Hours",
+  x = "Year",
+  caption = "Data from ATUS",
+) 
+
 # All Quantile
 csv %>%
   group_by(year, gender) %>%
@@ -199,7 +233,7 @@ csv %>%
   summarize(quantile(bls_leis, 0.25), quantile(bls_leis, 0.5), quantile(bls_leis, 0.75)) %>%
   clean_names() %>%
   pivot_longer(!year, names_to = "quantile", values_to = "hours") %>%
-  filter(year > 2006) %>%
+  filter(year > 2005) %>%
   filter(year < 2011) %>%
   ggplot(aes(x = year, y = hours, group = quantile)) +
   geom_line()
@@ -313,7 +347,13 @@ newcsv1 %>%
   count(emp) %>%
   filter(emp == "Unemployed") %>%
   ggplot(mapping = aes(x = year, y = n)) +
-  geom_line() 
+  geom_line() +
+  labs(
+  title = "Unemployment",
+  y = "Annual Hours",
+  x = "Count",
+  caption = "Data from ATUS",
+)
   #facet_wrap(~emp)
 
 newcsv1 %>%
@@ -328,7 +368,7 @@ newcsv1 %>%
   geom_line() +
   facet_wrap(~gender + emp) +
   labs(
-  title = "Distribution of annual individual leisure hours",
+  title = "Annual individual leisure hours",
   y = "Annual Hours",
   x = "Count",
   caption = "Data from ATUS",
@@ -343,17 +383,38 @@ newcsv1 %>%
   geom_line() +
   facet_wrap(~gender + emp) +
   labs(
-  title = "Distribution of annual individual leisure hours",
+  title = "Annual individual leisure hours",
   y = "Annual Hours",
   x = "Count",
   caption = "Data from ATUS",
 )
   
   
-
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2011) %>%
+  group_by(emp, gender) %>%
+  tally()
+  
 
 ```
 
+```{r population_of_employment}
+
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2011) %>%
+  group_by(emp, year) %>%
+  tally() %>%
+  pivot_wider(names_from = year, values_from = n) %>%
+  clean_names() %>%
+  mutate(change_2008 = x2008-x2007) %>%
+  mutate(change_2009 = x2009-x2008) %>%
+  mutate(change_2010 = x2010-x2009) %>%
+  select(1, 6:8)
+  
+
+```
 
 
 ```{r moremodels}
@@ -361,6 +422,14 @@ newcsv1 %>%
 
 change <- newcsv1 %>%
   group_by(gender,  year, new_educ, child, marst_simple) %>%
+  summarize(median(bls_leis)) %>%
+  clean_names() %>%
+  pivot_wider(values_from = median_bls_leis, names_from = year) %>%
+  clean_names() %>%
+  mutate(leisure_change = x2009 - x2007)
+
+change11 <- newcsv1 %>%
+  group_by(gender,  year, new_educ, child, marst_simple, emp) %>%
   summarize(median(bls_leis)) %>%
   clean_names() %>%
   pivot_wider(values_from = median_bls_leis, names_from = year) %>%
@@ -391,6 +460,15 @@ change4 <- newcsv1 %>%
   clean_names() %>%
   mutate(leisure_change = x2009 - x2007)
 
+
+change12 <- newcsv1 %>%
+  group_by(gender,  year, emp) %>%
+  summarize(median(bls_leis)) %>%
+  clean_names() %>%
+  pivot_wider(values_from = median_bls_leis, names_from = year) %>%
+  clean_names() %>%
+  mutate(leisure_change = x2009 - x2007)
+
 #child
 newcsv1
 
@@ -400,6 +478,15 @@ newcsv1
 delta <- change %>%
   lm(formula = leisure_change ~ gender+ new_educ+ child+ marst_simple)
 summary(delta)
+
+delta11 <- change11 %>%
+  lm(formula = leisure_change ~ gender+ new_educ+ child+ marst_simple + emp)
+summary(delta11)
+
+delta12 <- change12 %>%
+  lm(formula = leisure_change ~ gender + emp)
+summary(delta12)
+
 
 delta4 <- change4 %>%
   lm(formula = leisure_change ~ gender+ new_educ+ nchild+ marst_simple)
@@ -422,5 +509,8 @@ stargazer(delta, delta3, title="Models for Change in Leisure", align=TRUE, type 
 ```
 
 
+```{r}
+
+```
 
 
