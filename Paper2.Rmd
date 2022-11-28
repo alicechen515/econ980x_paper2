@@ -1,0 +1,324 @@
+---
+title: "Paper 2, Econ 980x"
+author: "Alice Chen"
+date: "2022-11-27"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(ggplot2)
+library(janitor)
+library(ggthemes)
+library(stargazer)
+
+
+
+```
+
+```{r files}
+
+csv <- read_csv(file = "atus_00001.csv.gz") %>%
+  clean_names()
+
+# race 
+race_file <- read_excel("race_980x.xlsx")
+
+race_file <- race_file %>%
+  rename(code1 = race) %>%
+  rename(race = code) 
+
+csv <- left_join(csv, race_file, by = "race") %>%
+  rename(race_code = race) %>%
+  rename(race = code1)
+
+
+# education
+education_file <- read_excel("Education.xlsx")
+education_file <- education_file %>%
+  rename(code_educ = educ) %>%
+  rename(educ = code_education) %>%
+  mutate(educ = as.numeric(educ))
+
+csv <- left_join(csv, education_file, by = "educ") %>%
+  rename(code_education = educ) %>%
+  rename(educ = code_educ) 
+
+# marital status
+marital_file <- read_excel("marital_status.xlsx")
+education_file <- marital_file %>%
+  mutate(marst = as.numeric(marst))
+  
+csv <- left_join(csv, marital_file, by = "marst") %>%
+  rename(code_marst = marst) %>%
+  rename(marst = marst_code) %>%
+  mutate(marst_simple = ifelse(code_marst <= 2, "Married", ifelse(code_marst >= 6, "Never Married", "Separated/Divorced")))
+
+
+
+# age
+csv <- csv %>%
+  filter(age > 18)
+
+# children
+csv <- csv %>%
+  mutate(child = ifelse(yngch < 19, 1, 0) )
+
+# gender
+
+csv <- csv %>%
+  mutate(gender = ifelse(sex == 1, "male", "female")) 
+
+# years 
+
+
+
+```
+
+
+```{r graphs}
+
+
+#leisure hours aggregate
+csv %>%
+  ggplot(mapping = aes(x = bls_leis)) +
+  geom_histogram(binwidth=50) +
+  labs(
+  title = "Distribution of annual individual leisure hours",
+  x = "Annual Hours",
+  y = "Count",
+  caption = "Data from ATUS",
+) 
+
+csv %>%
+  filter(year %in% c(2007, 2009)) %>%
+  ggplot(mapping = aes(x = bls_leis)) +
+  geom_histogram(binwidth=50) +
+  facet_wrap(~year) +
+  labs(
+  title = "Distribution of annual individual leisure hours",
+  x = "Annual Hours",
+  y = "Count",
+  caption = "Data from ATUS",
+)
+
+
+#leisure hours aggregate by gender
+csv %>%
+  group_by(gender) %>%
+  ggplot(mapping = aes(x = bls_leis) )+
+  geom_histogram(binwidth=50) +
+  facet_wrap(~ gender) +
+    labs(
+  title = "Distribution of annual individual leisure hours by gender",
+  x = "Annual Hours",
+  y = "Count",
+  caption = "Data from ATUS",
+)
+
+
+csv %>%
+  filter(year %in% c(2007, 2009)) %>%
+  ggplot(mapping = aes(x = bls_leis)) +
+  geom_histogram(binwidth=50) +
+  facet_wrap(~ gender + year) +
+  labs(
+  title = "Distribution of annual individual leisure hours by gender",
+  x = "Annual Hours",
+  y = "Count",
+  caption = "Data from ATUS",
+)
+
+
+
+
+
+# Median
+csv %>%
+  group_by(year, gender) %>%
+  summarize(median(bls_leis)) %>%
+  clean_names() %>%
+  ggplot(aes(x = year, y = median_bls_leis)) +
+  geom_line() +
+  facet_wrap(~ gender) +
+  labs(
+  title = "Median annual individual leisure hours by gender",
+  y = "Annual Hours",
+  x = "Year",
+  caption = "Data from ATUS",
+) 
+
+# All Quantile
+csv %>%
+  group_by(year, gender) %>%
+  summarize(quantile_25 = quantile(bls_leis, 0.25), quantile_50 = quantile(bls_leis, 0.5), quantile_75 = quantile(bls_leis, 0.75)) %>%
+  clean_names() %>%
+  pivot_longer(quantile_25:quantile_75, names_to = "quantile", values_to = "hours") %>%
+  ggplot(aes(x = year, y = hours, group = quantile, colour = quantile)) +
+  geom_line() +
+    facet_wrap(~ gender) +
+  labs(
+  title = "Annual individual leisure hours by gender",
+  y = "Annual Hours",
+  x = "Year",
+  caption = "Data from ATUS",
+) 
+
+
+csv %>%
+  group_by(year) %>%
+  summarize(quantile(bls_leis, 0.25), quantile(bls_leis, 0.5), quantile(bls_leis, 0.75)) %>%
+  clean_names() %>%
+  pivot_longer(!year, names_to = "quantile", values_to = "hours") %>%
+  ggplot(aes(x = year, y = hours, group = quantile)) +
+  geom_line()
+
+
+csv %>%
+  group_by(year) %>%
+  summarize(quantile(bls_leis, 0.25), quantile(bls_leis, 0.5), quantile(bls_leis, 0.75)) %>%
+  clean_names() %>%
+  pivot_longer(!year, names_to = "quantile", values_to = "hours") %>%
+  filter(year > 2006) %>%
+  filter(year < 2011) %>%
+  ggplot(aes(x = year, y = hours, group = quantile)) +
+  geom_line()
+
+# by year, gender
+csv %>%
+  group_by(year, gender) %>%
+  summarize(quantile_25 = quantile(bls_leis, 0.25), quantile_50 = quantile(bls_leis, 0.5), quantile_75 = quantile(bls_leis, 0.75)) %>%
+  clean_names() %>%
+  pivot_longer(quantile_25:quantile_75, names_to = "quantile", values_to = "hours") %>%
+  filter(year > 2005) %>%
+  filter(year < 2011) %>%
+  ggplot(aes(x = year, y = hours, group = quantile, colour = quantile)) +
+  geom_line() +
+  facet_wrap(~gender) +
+    labs(
+  title = "Annual individual leisure hours by gender",
+  y = "Annual Hours",
+  x = "Year",
+  caption = "Data from ATUS",
+) 
+
+# by year, gender
+csv %>%
+  group_by(year, gender) %>%
+  summarize(median = median(bls_leis)) %>%
+  clean_names() %>%
+  filter(year > 2005) %>%
+  filter(year < 2011) %>%
+  ggplot(aes(x = year, y = median)) +
+  geom_line() +
+  facet_wrap(~gender) +
+      labs(
+  title = "Annual individual leisure hours by gender",
+  y = "Annual Hours",
+  x = "Year",
+  caption = "Data from ATUS",
+) 
+
+
+#csv %>%
+ # ggplot(mapping = aes(x = year, y = bls_leis)) + 
+ # geom_jitter(alpha = 0.01)
+  
+
+
+```
+
+
+```{r regressions, echo=FALSE}
+
+#naive regression of men versus women
+  
+
+g <- csv %>%
+  lm(formula = bls_leis ~ gender)
+
+#naive regression of men versus women + year 
+
+y <- csv %>%
+  lm(formula = bls_leis ~ gender + year)
+
+# race count
+newcsv <- csv %>%
+ filter(race_code <= 210)
+
+newcsv
+newcsv %>%
+  lm(formula = bls_leis ~ gender + year + age + race) 
+
+# 
+a <- newcsv %>%
+  lm(formula = bls_leis ~ gender + year + age + race) 
+summary(a)
+
+newcsv
+
+# education
+newcsv1 <- newcsv %>%
+  mutate(new_educ = ifelse(code_education <= 17, "<High School", ifelse(code_education >= 40, ">Four Year Degree", "High School Graduate")))
+  newcsv1
+  
+b <- newcsv1 %>%
+  lm(formula = bls_leis ~ gender + year + age + race + new_educ) 
+summary(b)
+
+newcsv1
+
+# with children
+ 
+
+c <- newcsv1 %>%
+  lm(formula = bls_leis ~ gender + year + age + race + new_educ + nchild) 
+summary(c)
+
+#marital status
+
+d <- newcsv1 %>%
+  lm(formula = bls_leis ~ gender + year + age + race + new_educ + nchild + marst_simple) 
+summary(d)
+
+
+stargazer(g, y, a, title="Various Models", align=TRUE)
+```
+
+```{r moremodels}
+#Change
+
+change <- newcsv1 %>%
+  group_by(gender,  year, new_educ, child, marst_simple) %>%
+  summarize(median(bls_leis)) %>%
+  clean_names() %>%
+  pivot_wider(values_from = median_bls_leis, names_from = year) %>%
+  clean_names() %>%
+  mutate(leisure_change = x2009 - x2007)
+
+change2 <- newcsv1 %>%
+  group_by(gender, year) %>%
+  summarize(median(bls_leis)) %>%
+  clean_names() %>%
+  pivot_wider(values_from = median_bls_leis, names_from = year) %>%
+  clean_names() %>%
+  mutate(leisure_change = x2009 - x2007)
+
+change2
+
+delta <- change %>%
+  lm(formula = leisure_change ~ gender+ new_educ+ child+ marst_simple)
+summary(delta)
+
+
+  
+
+```
+
+
+
