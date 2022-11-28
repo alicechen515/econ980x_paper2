@@ -26,11 +26,14 @@ library(ipumsr)
 ```{r files}
 
 
-ddi <- read_ipums_ddi("atus_00005.dat")
-data <- read_ipums_micro(ddi)
-
-csv <- read_csv(file = "atus_00001.csv.gz") %>%
+ddi <- read_ipums_ddi("atus_00005.xml")
+csv <- read_ipums_micro(ddi) %>%
   clean_names()
+
+data
+
+#csv <- read_csv(file = "atus_00001.csv.gz") %>%
+ # clean_names()
 
 # race 
 race_file <- read_excel("race_980x.xlsx")
@@ -84,6 +87,11 @@ csv <- csv %>%
 
 csv %>%
   summary(earnweek)
+
+# employed
+csv <- csv %>%
+  mutate(empstat_cps8 = as.numeric(empstat_cps8)) %>%
+  mutate(emp = ifelse(empstat_cps8<= 2, "Employed", ifelse(empstat_cps8>=5, "Not In Labour Force", "Unemployed")))
 
 ```
 
@@ -296,6 +304,57 @@ summary(d)
 
 stargazer(a, b, c, d, title="Various Models", align=TRUE, type = "text")
 ```
+```{r employment}
+
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2011) %>%
+  group_by(year) %>%
+  count(emp) %>%
+  filter(emp == "Unemployed") %>%
+  ggplot(mapping = aes(x = year, y = n)) +
+  geom_line() 
+  #facet_wrap(~emp)
+
+newcsv1 %>%
+  ggplot(mapping = aes(x = bls_leis)) +
+  geom_histogram() +
+  facet_wrap(~emp)
+
+newcsv1 %>%
+  group_by(emp, gender, new_educ, year) %>%
+  summarize(median = median(bls_leis)) %>%
+  ggplot(mapping = aes(x = year, y = median, group = new_educ, colour = new_educ)) +
+  geom_line() +
+  facet_wrap(~gender + emp) +
+  labs(
+  title = "Distribution of annual individual leisure hours",
+  y = "Annual Hours",
+  x = "Count",
+  caption = "Data from ATUS",
+)
+  
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2011) %>%
+  group_by(emp, gender, new_educ, year) %>%
+  summarize(median = median(bls_leis)) %>%
+  ggplot(mapping = aes(x = year, y = median, group = new_educ, colour = new_educ)) +
+  geom_line() +
+  facet_wrap(~gender + emp) +
+  labs(
+  title = "Distribution of annual individual leisure hours",
+  y = "Annual Hours",
+  x = "Count",
+  caption = "Data from ATUS",
+)
+  
+  
+
+
+```
+
+
 
 ```{r moremodels}
 #Change
@@ -361,6 +420,7 @@ summary(delta3)
 stargazer(delta, delta3, title="Models for Change in Leisure", align=TRUE, type = "text")
 
 ```
+
 
 
 
