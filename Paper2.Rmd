@@ -17,12 +17,17 @@ library(janitor)
 library(ggthemes)
 library(stargazer)
 #library(tinytex)
+library(ipumsr)
 
 
 
 ```
 
 ```{r files}
+
+
+ddi <- read_ipums_ddi("atus_00005.dat")
+data <- read_ipums_micro(ddi)
 
 csv <- read_csv(file = "atus_00001.csv.gz") %>%
   clean_names()
@@ -77,7 +82,8 @@ csv <- csv %>%
 
 # years 
 
-
+csv %>%
+  summary(earnweek)
 
 ```
 
@@ -318,6 +324,14 @@ change3 <- newcsv1 %>%
   clean_names() %>%
   mutate(leisure_change = x2009 - x2007)
 
+change4 <- newcsv1 %>%
+  group_by(gender,  year, new_educ, nchild, marst_simple) %>%
+  summarize(mean(bls_leis)) %>%
+  clean_names() %>%
+  pivot_wider(values_from = mean_bls_leis, names_from = year) %>%
+  clean_names() %>%
+  mutate(leisure_change = x2009 - x2007)
+
 #child
 newcsv1
 
@@ -328,11 +342,23 @@ delta <- change %>%
   lm(formula = leisure_change ~ gender+ new_educ+ child+ marst_simple)
 summary(delta)
 
+delta4 <- change4 %>%
+  lm(formula = leisure_change ~ gender+ new_educ+ nchild+ marst_simple)
+summary(delta4)
+
+delta3 <- change %>%
+  lm(formula = leisure_change ~ gender+ new_educ+ nchild+ marst_simple)
+summary(delta3)
+
+delta <- change %>%
+  lm(formula = leisure_change ~ gender+ new_educ+ child+ marst_simple)
+summary(delta)
+
 delta3 <- change3 %>%
   lm(formula = leisure_change ~ gender+ new_educ+ nchild+ marst_simple)
 summary(delta3)
 
-  
+stargazer(delta, delta3, title="Models for Change in Leisure", align=TRUE, type = "text")
 
 ```
 
