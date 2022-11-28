@@ -3,9 +3,9 @@ title: "Paper 2, Econ 980x"
 author: "Alice Chen"
 date: "2022-11-27"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -235,7 +235,7 @@ csv %>%
 ```
 
 
-```{r regressions, echo=FALSE}
+```{r regressions}
 
 #naive regression of men versus women
   
@@ -288,7 +288,7 @@ d <- newcsv1 %>%
 summary(d)
 
 
-stargazer(g, y, a, title="Various Models", align=TRUE, type = "text")
+stargazer(a, b, c, d, title="Various Models", align=TRUE, type = "text")
 ```
 
 ```{r moremodels}
@@ -310,12 +310,27 @@ change2 <- newcsv1 %>%
   clean_names() %>%
   mutate(leisure_change = x2009 - x2007)
 
-change2
+change3 <- newcsv1 %>%
+  group_by(gender,  year, new_educ, nchild, marst_simple) %>%
+  summarize(median(bls_leis)) %>%
+  clean_names() %>%
+  pivot_wider(values_from = median_bls_leis, names_from = year) %>%
+  clean_names() %>%
+  mutate(leisure_change = x2009 - x2007)
+
+#child
+newcsv1
+
+
+
 
 delta <- change %>%
   lm(formula = leisure_change ~ gender+ new_educ+ child+ marst_simple)
 summary(delta)
 
+delta3 <- change3 %>%
+  lm(formula = leisure_change ~ gender+ new_educ+ nchild+ marst_simple)
+summary(delta3)
 
   
 
