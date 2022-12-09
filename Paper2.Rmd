@@ -546,6 +546,13 @@ time_model1 <- newcsv1 %>%
 
 summary(time_model1)
 
+# W emp*gender
+time_model1 <- newcsv1 %>%
+  mutate(year = as.character(year)) %>%
+  lm(formula = bls_leis ~ gender + year + gender*year + age + race + new_educ + emp*year) 
+
+summary(time_model1)
+
 newcsv1
 
 ```
