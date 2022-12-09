@@ -534,7 +534,8 @@ stargazer(delta, delta3, title="Models for Change in Leisure", align=TRUE, type 
 summary(newcsv1)
 
 time_model <- newcsv1 %>%
-  lm(formula = bls_leis ~ gender*year + age + race*new_educ) 
+  mutate(year = as.character(year)) %>%
+  lm(formula = bls_leis ~ gender + year + gender*year + age + race*new_educ ) 
 
 summary(time_model)
 
