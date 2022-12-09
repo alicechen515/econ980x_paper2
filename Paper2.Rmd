@@ -104,8 +104,8 @@ csv %>%
   ggplot(mapping = aes(x = bls_leis)) +
   geom_histogram(binwidth=50) +
   labs(
-  title = "Distribution of annual individual leisure hours",
-  x = "Annual Hours",
+  title = "Distribution of daily individual leisure minutes",
+  x = "Daily Minutes",
   y = "Count",
   caption = "Data from ATUS",
 ) 
@@ -116,8 +116,8 @@ csv %>%
   geom_histogram(binwidth=50) +
   facet_wrap(~year) +
   labs(
-  title = "Distribution of annual individual leisure hours",
-  x = "Annual Hours",
+  title = "Distribution of daily individual leisure minutes",
+  x = "Daily Minutes",
   y = "Count",
   caption = "Data from ATUS",
 )
@@ -130,8 +130,8 @@ csv %>%
   geom_histogram(binwidth=50) +
   facet_wrap(~ gender) +
     labs(
-  title = "Distribution of annual individual leisure hours by gender",
-  x = "Annual Hours",
+  title = "Distribution of daily individual leisure minutes",
+  x = "Daily Minutes",
   y = "Count",
   caption = "Data from ATUS",
 )
@@ -143,8 +143,8 @@ csv %>%
   geom_histogram(binwidth=50) +
   facet_wrap(~ gender + year) +
   labs(
-  title = "Distribution of annual individual leisure hours by gender",
-  x = "Annual Hours",
+  title = "Distribution of daily individual leisure minutes",
+  x = "Daily Minutes",
   y = "Count",
   caption = "Data from ATUS",
 )
@@ -162,8 +162,8 @@ csv %>%
   geom_line() +
   facet_wrap(~ gender) +
   labs(
-  title = "Median annual individual leisure hours by gender",
-  y = "Annual Hours",
+  title = "Median daily individual leisure minutes by gender",
+  y = "Daily Minutes",
   x = "Year",
   caption = "Data from ATUS",
 ) 
@@ -179,8 +179,8 @@ csv %>%
   geom_line() +
   facet_wrap(~ gender) +
   labs(
-  title = "Median annual individual leisure hours by gender",
-  y = "Annual Hours",
+  title = "Median daily individual leisure minutes by gender",
+  y = "Daily Minutes",
   x = "Year",
   caption = "Data from ATUS",
 ) 
@@ -196,8 +196,8 @@ csv %>%
   geom_line() +
   facet_wrap(~ gender) +
   labs(
-  title = "Mean annual individual leisure hours by gender",
-  y = "Annual Hours",
+  title = "Mean daily individual leisure minutes by gender",
+  y = "Daily Minutes",
   x = "Year",
   caption = "Data from ATUS",
 ) 
@@ -212,8 +212,8 @@ csv %>%
   geom_line() +
     facet_wrap(~ gender) +
   labs(
-  title = "Annual individual leisure hours by gender",
-  y = "Annual Hours",
+  title = "Daily individual leisure minutes by gender",
+  y = "Daily Minutes",
   x = "Year",
   caption = "Data from ATUS",
 ) 
@@ -250,8 +250,8 @@ csv %>%
   geom_line() +
   facet_wrap(~gender) +
     labs(
-  title = "Annual individual leisure hours by gender",
-  y = "Annual Hours",
+  title = "Daily individual leisure minutes by gender",
+  y = "Daily Minutes",
   x = "Year",
   caption = "Data from ATUS",
 ) 
@@ -267,8 +267,8 @@ csv %>%
   geom_line() +
   facet_wrap(~gender) +
       labs(
-  title = "Annual individual leisure hours by gender",
-  y = "Annual Hours",
+  title = "Daily individual leisure minutes by gender",
+  y = "Daily Minutes",
   x = "Year",
   caption = "Data from ATUS",
 ) 
@@ -350,7 +350,7 @@ newcsv1 %>%
   geom_line() +
   labs(
   title = "Unemployment",
-  y = "Annual Hours",
+  y = "Daily Minutes",
   x = "Count",
   caption = "Data from ATUS",
 )
@@ -368,8 +368,8 @@ newcsv1 %>%
   geom_line() +
   facet_wrap(~gender + emp) +
   labs(
-  title = "Annual individual leisure hours",
-  y = "Annual Hours",
+  title = "Daily individual leisure minutes",
+  y = "Daily Minutes",
   x = "Count",
   caption = "Data from ATUS",
 )
@@ -383,8 +383,8 @@ newcsv1 %>%
   geom_line() +
   facet_wrap(~gender + emp) +
   labs(
-  title = "Annual individual leisure hours",
-  y = "Annual Hours",
+  title = "Daily individual leisure minutes",
+  y = "Daily Minutes",
   x = "Count",
   caption = "Data from ATUS",
 )
