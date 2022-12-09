@@ -23,12 +23,19 @@ library(ipumsr)
 
 ```
 
-```{r files}
-
+```{r cashe data, cache = TRUE}
 
 ddi <- read_ipums_ddi("atus_00005.xml")
 csv <- read_ipums_micro(ddi) %>%
   clean_names()
+
+```
+
+
+```{r files}
+
+
+
 
 data
 
@@ -92,6 +99,17 @@ csv %>%
 csv <- csv %>%
   mutate(empstat_cps8 = as.numeric(empstat_cps8)) %>%
   mutate(emp = ifelse(empstat_cps8<= 2, "Employed", ifelse(empstat_cps8>=5, "Not In Labour Force", "Unemployed")))
+
+# race
+csv %>%
+  count(race, sort = TRUE) %>%
+  filter(n > 1000)
+
+#We can see that top 5 groups > 1000 people
+
+csv <- csv %>%
+  filter(race %in% c("White only", "Black only", "Asian only", "American Indian, Alaskan Native", "White-American Indian")) 
+
 
 ```
 
@@ -492,7 +510,7 @@ delta4 <- change4 %>%
   lm(formula = leisure_change ~ gender+ new_educ+ nchild+ marst_simple)
 summary(delta4)
 
-delta3 <- change %>%
+delta3 <- change4 %>%
   lm(formula = leisure_change ~ gender+ new_educ+ nchild+ marst_simple)
 summary(delta3)
 
@@ -509,7 +527,16 @@ stargazer(delta, delta3, title="Models for Change in Leisure", align=TRUE, type 
 ```
 
 
-```{r}
+```{r time-year-gender effects}
+
+
+
+summary(newcsv1)
+
+time_model <- newcsv1 %>%
+  lm(formula = bls_leis ~ gender*year + age + race*new_educ) 
+
+summary(time_model)
 
 ```
 
