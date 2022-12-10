@@ -16,7 +16,7 @@ library(ggplot2)
 library(janitor)
 library(ggthemes)
 library(stargazer)
-#library(tinytex)
+library(tinytex)
 library(ipumsr)
 
 
@@ -547,14 +547,21 @@ time_model1 <- newcsv1 %>%
 summary(time_model1)
 
 # W emp*gender
-time_model1 <- newcsv1 %>%
+time_model2 <- newcsv1 %>%
   mutate(year = as.character(year)) %>%
   lm(formula = bls_leis ~ gender + year + gender*year + age + race + new_educ + emp*year) 
 
-summary(time_model1)
+summary(time_model2)
 
 newcsv1
 
+
+
 ```
 
+```{r tables, results = "asis"}
+
+stargazer(time_model, time_model1, time_model2, title="Models for Change in Leisure", align=TRUE, type = "html")
+
+```
 
