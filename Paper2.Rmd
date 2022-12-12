@@ -22,6 +22,8 @@ library(dplyr)
 library(haven)
 library(survey)
 library(spatstat)
+library(kableExtra)
+library(lfe)
 
 
 
@@ -337,13 +339,12 @@ newcsv
 # education
 newcsv1 <- newcsv %>%
   mutate(new_educ = ifelse(code_education <= 17, "<High School", ifelse(code_education >= 40, ">Four Year Degree", "High School Graduate")))
-  newcsv1
+
   
 b <- newcsv1 %>%
   lm(formula = bls_leis ~ gender + year + age + race + new_educ, weight = wt06) 
 summary(b)
 
-newcsv1
 
 # with children
  
@@ -359,9 +360,12 @@ d <- newcsv1 %>%
 summary(d)
 
 
-stargazer(a, b, c, d, title="Various Models", align=TRUE, type = "text")
+
 ```
 
+```{r table0, results = "asis"}
+stargazer(a, b, c, d, title="Various Models", align=TRUE, type = "html")
+```
 
 
 
@@ -387,9 +391,30 @@ newcsv1 %>%
 newcsv1 %>%
   ggplot(mapping = aes(x = bls_leis)) +
   geom_histogram() +
-  facet_wrap(~emp)
+  facet_wrap(~emp) +
+  labs(
+  title = "Daily individual leisure minutes by employment type",
+  y = "Count",
+  x = "Daily Minutes",
+  caption = "Data from ATUS",
+)
 
 newcsv1 %>%
+  filter(year < 2020) %>%
+  group_by(emp, gender, new_educ, year) %>%
+  summarize(median = weighted.median(bls_leis, wt06)) %>%
+  ggplot(mapping = aes(x = year, y = median, group = new_educ, colour = new_educ)) +
+  geom_line() +
+  facet_wrap(~gender + emp) +
+  labs(
+  title = "Weighted daily individual leisure minutes",
+  y = "Daily Minutes",
+  x = "Count",
+  caption = "Data from ATUS",
+)
+
+newcsv1 %>%
+  filter(year < 2020) %>%
   group_by(emp, gender, new_educ, year) %>%
   summarize(median = median(bls_leis)) %>%
   ggplot(mapping = aes(x = year, y = median, group = new_educ, colour = new_educ)) +
@@ -397,6 +422,22 @@ newcsv1 %>%
   facet_wrap(~gender + emp) +
   labs(
   title = "Daily individual leisure minutes",
+  y = "Daily Minutes",
+  x = "Count",
+  caption = "Data from ATUS",
+)
+  
+  
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2011) %>%
+  group_by(emp, gender, new_educ, year) %>%
+  summarize(median = weighted.median(bls_leis, wt06)) %>%
+  ggplot(mapping = aes(x = year, y = median, group = new_educ, colour = new_educ)) +
+  geom_line() +
+  facet_wrap(~gender + emp) +
+  labs(
+  title = "Weighted daily individual leisure minutes",
   y = "Daily Minutes",
   x = "Count",
   caption = "Data from ATUS",
@@ -418,12 +459,20 @@ newcsv1 %>%
 )
   
   
-newcsv1 %>%
+count_table <- newcsv1 %>%
   filter(year > 2006) %>%
   filter(year < 2011) %>%
   group_by(emp, gender) %>%
   tally()
+
+count_table2 <- newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2011) %>%
+  group_by(emp, gender, new_educ) %>%
+  tally()
   
+kable(count_table2) %>% kable_styling()
+kable(count_table) %>% kable_styling()
 
 ```
 
@@ -439,8 +488,11 @@ newcsv1 %>%
   mutate(change_2008 = x2008-x2007) %>%
   mutate(change_2009 = x2009-x2008) %>%
   mutate(change_2010 = x2010-x2009) %>%
-  select(1, 6:8)
+  select(1, 6:8) %>%
+  kbl() %>%
+  kable_styling()
   
+
 
 ```
 
@@ -449,38 +501,43 @@ newcsv1 %>%
 #Change
 
 change <- newcsv1 %>%
+  filter(year<2020) %>%
   group_by(gender,  year, new_educ, child, marst_simple) %>%
-  summarize(median(bls_leis)) %>%
+  summarize(median_bls_leis = weighted.median(bls_leis, wt06)) %>%
   clean_names() %>%
   pivot_wider(values_from = median_bls_leis, names_from = year) %>%
   clean_names() %>%
   mutate(leisure_change = x2009 - x2007)
 
 change11 <- newcsv1 %>%
+  filter(year<2020) %>%
   group_by(gender,  year, new_educ, child, marst_simple, emp) %>%
-  summarize(median(bls_leis)) %>%
+   summarize(median_bls_leis = weighted.median(bls_leis, wt06)) %>%
   clean_names() %>%
   pivot_wider(values_from = median_bls_leis, names_from = year) %>%
   clean_names() %>%
   mutate(leisure_change = x2009 - x2007)
 
 change2 <- newcsv1 %>%
+  filter(year<2020) %>%
   group_by(gender, year) %>%
-  summarize(median(bls_leis)) %>%
+  summarize(median_bls_leis = weighted.median(bls_leis, wt06)) %>%
   clean_names() %>%
   pivot_wider(values_from = median_bls_leis, names_from = year) %>%
   clean_names() %>%
   mutate(leisure_change = x2009 - x2007)
 
 change3 <- newcsv1 %>%
+  filter(year<2020) %>%
   group_by(gender,  year, new_educ, nchild, marst_simple) %>%
-  summarize(median(bls_leis)) %>%
+   summarize(median_bls_leis = weighted.median(bls_leis, wt06)) %>%
   clean_names() %>%
   pivot_wider(values_from = median_bls_leis, names_from = year) %>%
   clean_names() %>%
   mutate(leisure_change = x2009 - x2007)
 
 change4 <- newcsv1 %>%
+  filter(year<2020) %>%
   group_by(gender,  year, new_educ, nchild, marst_simple) %>%
   summarize(mean(bls_leis)) %>%
   clean_names() %>%
@@ -490,8 +547,9 @@ change4 <- newcsv1 %>%
 
 
 change12 <- newcsv1 %>%
+  filter(year<2020) %>%
   group_by(gender,  year, emp) %>%
-  summarize(median(bls_leis)) %>%
+   summarize(median_bls_leis = weighted.median(bls_leis, wt06)) %>%
   clean_names() %>%
   pivot_wider(values_from = median_bls_leis, names_from = year) %>%
   clean_names() %>%
@@ -532,7 +590,12 @@ delta3 <- change3 %>%
   lm(formula = leisure_change ~ gender+ new_educ+ nchild+ marst_simple)
 summary(delta3)
 
-stargazer(delta, delta3, title="Models for Change in Leisure", align=TRUE, type = "text")
+
+
+```
+
+```{r table1, , results = "asis"}
+stargazer(delta, delta3, title="Models for Change in Leisure", align=TRUE, type = "html")
 
 ```
 
@@ -540,38 +603,209 @@ stargazer(delta, delta3, title="Models for Change in Leisure", align=TRUE, type 
 ```{r time-year-gender effects}
 
 
-
-summary(newcsv1)
+# First Set
 
 time_model <- newcsv1 %>%
+  filter(year < 2020) %>%
   mutate(year = as.character(year)) %>%
-  lm(formula = bls_leis ~ gender + year + gender*year + age + race + new_educ ) 
+  lm(formula = bls_leis ~ gender + year + gender*year + age + race + new_educ,weights = wt06 ) 
 
-summary(time_model)
 
 # W employment
 time_model1 <- newcsv1 %>%
+  filter(year < 2020) %>%
   mutate(year = as.character(year)) %>%
-  lm(formula = bls_leis ~ gender + year + gender*year + age + race + new_educ + emp) 
+  lm(formula = bls_leis ~ gender + year + gender*year + age + race + new_educ + emp, weights = wt06) 
 
-summary(time_model1)
 
 # W emp*gender
+
 time_model2 <- newcsv1 %>%
+  filter(year < 2020) %>%
   mutate(year = as.character(year)) %>%
-  lm(formula = bls_leis ~ gender + year + gender*year + age + race + new_educ + emp*year) 
+  lm(formula = bls_leis ~ gender + year + gender*year + age + race + new_educ + emp + emp*year, weights = wt06) 
 
-summary(time_model2)
-
-newcsv1
 
 
 
 ```
 
-```{r tables, results = "asis"}
+```{r table2, results = "asis"}
 
 stargazer(time_model, time_model1, time_model2, title="Models for Change in Leisure", align=TRUE, type = "html")
+
+#stargazer(time_modela, time_model1a, time_model2a8, title="Models for Change in Leisure", align=TRUE, type = "html")
+```
+
+
+```{r}
+
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2009) %>%
+  summarize(median_bls_leis_arts = weighted.median(bls_leis_arts, wt06),
+            median_bls_leis_attend = weighted.median(bls_leis_attend, wt06),
+            median_bls_leis_attsport = weighted.median(bls_leis_attsport, wt06),
+            median_bls_leis_partsport = weighted.median(bls_leis_partsport, wt06),
+            median_bls_leis_relax = weighted.median(bls_leis_relax, wt06),
+            median_bls_leis_soc = weighted.median(bls_leis_soc, wt06),
+            median_bls_leis_sport = weighted.median(bls_leis_sport, wt06),
+            median_bls_leis_soccom = weighted.median(bls_leis_arts, wt06),
+            median_bls_leis_travel = weighted.median(bls_leis_travel, wt06),
+            median_bls_leis_tv = weighted.median(bls_leis_tv, wt06)) %>%
+  pivot_longer(cols = everything(), names_to = "Activity", values_to = "Median Weighted Daily Minutes") %>%
+  kbl() %>%
+  kable_styling()
+
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2009) %>%
+  summarize(mean_bls_leis_arts = weighted.mean(bls_leis_arts, wt06),
+            mean_bls_leis_attend = weighted.mean(bls_leis_attend, wt06),
+            mean_bls_leis_attsport = weighted.mean(bls_leis_attsport, wt06),
+            mean_bls_leis_partsport = weighted.mean(bls_leis_partsport, wt06),
+            mean_bls_leis_relax = weighted.mean(bls_leis_relax, wt06),
+            mean_bls_leis_soc = weighted.mean(bls_leis_soc, wt06),
+            mean_bls_leis_sport = weighted.mean(bls_leis_sport, wt06),
+            mean_bls_leis_soccom = weighted.mean(bls_leis_arts, wt06),
+            mean_bls_leis_travel = weighted.mean(bls_leis_travel, wt06),
+            mean_bls_leis_tv = weighted.mean(bls_leis_tv, wt06)) %>%
+  pivot_longer(cols = everything(), names_to = "Activity", values_to = "Mean Weighted Daily Minutes") %>%
+  kbl() %>%
+  kable_styling()
+
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2009) %>%
+  group_by(gender) %>%
+  summarize(median_bls_leis_arts = weighted.median(bls_leis_arts, wt06),
+            median_bls_leis_attend = weighted.median(bls_leis_attend, wt06),
+            median_bls_leis_attsport = weighted.median(bls_leis_attsport, wt06),
+            median_bls_leis_partsport = weighted.median(bls_leis_partsport, wt06),
+            median_bls_leis_relax = weighted.median(bls_leis_relax, wt06),
+            median_bls_leis_soc = weighted.median(bls_leis_soc, wt06),
+            median_bls_leis_sport = weighted.median(bls_leis_sport, wt06),
+            median_bls_leis_soccom = weighted.median(bls_leis_arts, wt06),
+            median_bls_leis_travel = weighted.median(bls_leis_travel, wt06),
+            median_bls_leis_tv = weighted.median(bls_leis_tv, wt06)) %>%
+  pivot_longer(!gender, names_to = "Activity", values_to = "Median Weighted Daily Minutes") %>%
+  kbl() %>%
+  kable_styling()
+  
+
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2009) %>%
+  group_by(emp, gender, new_educ, year) %>%
+  summarize(median_bls_leis_arts = weighted.median(bls_leis_arts, wt06),
+            median_bls_leis_attend = weighted.median(bls_leis_attend, wt06),
+            median_bls_leis_attsport = weighted.median(bls_leis_attsport, wt06),
+            median_bls_leis_partsport = weighted.median(bls_leis_partsport, wt06),
+            median_bls_leis_relax = weighted.median(bls_leis_relax, wt06),
+            median_bls_leis_soc = weighted.median(bls_leis_soc, wt06),
+            median_bls_leis_sport = weighted.median(bls_leis_sport, wt06),
+            median_bls_leis_soccom = weighted.median(bls_leis_arts, wt06),
+            median_bls_leis_travel = weighted.median(bls_leis_travel, wt06),
+            median_bls_leis_tv = weighted.median(bls_leis_tv, wt06)) %>%
+  ggplot(mapping = aes(x = year, y = median, group = new_educ, colour = new_educ)) +
+  geom_line() +
+  facet_wrap(~gender + emp) +
+  labs(
+  title = "Daily individual leisure minutes",
+  y = "Daily Minutes",
+  x = "Count",
+  caption = "Data from ATUS",
+)
+
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2009) %>%
+  group_by(emp, gender, new_educ, year) %>%
+  summarize(median_bls_leis_arts = weighted.mean(bls_leis_arts, wt06),
+            median_bls_leis_attend = weighted.mean(bls_leis_attend, wt06),
+            median_bls_leis_attsport = weighted.mean(bls_leis_attsport, wt06),
+            median_bls_leis_partsport = weighted.mean(bls_leis_partsport, wt06),
+            median_bls_leis_relax = weighted.mean(bls_leis_relax, wt06),
+            median_bls_leis_soc = weighted.mean(bls_leis_soc, wt06),
+            median_bls_leis_sport = weighted.mean(bls_leis_sport, wt06),
+            median_bls_leis_soccom = weighted.mean(bls_leis_arts, wt06),
+            median_bls_leis_travel = weighted.mean(bls_leis_travel, wt06),
+            median_bls_leis_tv = weighted.mean(bls_leis_tv, wt06)) 
+
+# TV Mean by Group   
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2009) %>%
+  group_by(emp, gender, new_educ, year) %>%
+  summarize(mean_bls_leis_arts = weighted.mean(bls_leis_arts, wt06),
+            mean_bls_leis_attend = weighted.mean(bls_leis_attend, wt06),
+            mean_bls_leis_attsport = weighted.mean(bls_leis_attsport, wt06),
+            mean_bls_leis_partsport = weighted.mean(bls_leis_partsport, wt06),
+            mean_bls_leis_relax = weighted.mean(bls_leis_relax, wt06),
+            mean_bls_leis_soc = weighted.mean(bls_leis_soc, wt06),
+            mean_bls_leis_sport = weighted.mean(bls_leis_sport, wt06),
+            mean_bls_leis_soccom = weighted.mean(bls_leis_arts, wt06),
+            mean_bls_leis_travel = weighted.mean(bls_leis_travel, wt06),
+            mean_bls_leis_tv = weighted.mean(bls_leis_tv, wt06)) %>%
+  ggplot(mapping = aes(x = mean_bls_leis_tv, y = emp, colour = new_educ)) +
+  geom_point() +
+  facet_wrap(~ gender + new_educ) +
+    labs(
+  title = "Average minutes individuals spend on watching TV",
+  y = "Employment Status",
+  x = "Daily Minutes",
+  caption = "Data from ATUS",
+)
+
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2009) %>%
+  group_by(emp, gender, new_educ, year) %>%
+  summarize(mean_bls_leis_arts = weighted.mean(bls_leis_arts, wt06),
+            mean_bls_leis_attend = weighted.mean(bls_leis_attend, wt06),
+            mean_bls_leis_attsport = weighted.mean(bls_leis_attsport, wt06),
+            mean_bls_leis_partsport = weighted.mean(bls_leis_partsport, wt06),
+            mean_bls_leis_relax = weighted.mean(bls_leis_relax, wt06),
+            mean_bls_leis_soc = weighted.mean(bls_leis_soc, wt06),
+            mean_bls_leis_sport = weighted.mean(bls_leis_sport, wt06),
+            mean_bls_leis_soccom = weighted.mean(bls_leis_arts, wt06),
+            mean_bls_leis_travel = weighted.mean(bls_leis_travel, wt06),
+            mean_bls_leis_tv = weighted.mean(bls_leis_tv, wt06)) %>%
+  ggplot(mapping = aes(x = mean_bls_leis_relax, y = emp, colour = new_educ)) +
+  geom_point() +
+  facet_wrap(~ gender + new_educ) +
+  labs(
+  title = "Average minutes individuals spend on relaxation",
+  y = "Employment Status",
+  x = "Daily Minutes",
+  caption = "Data from ATUS",
+)
+  
+
+newcsv1 %>%
+  filter(year > 2006) %>%
+  filter(year < 2009) %>%
+  group_by(emp, gender, new_educ, year) %>%
+  summarize(mean_bls_leis_arts = weighted.mean(bls_leis_arts, wt06),
+            mean_bls_leis_attend = weighted.mean(bls_leis_attend, wt06),
+            mean_bls_leis_attsport = weighted.mean(bls_leis_attsport, wt06),
+            mean_bls_leis_partsport = weighted.mean(bls_leis_partsport, wt06),
+            mean_bls_leis_relax = weighted.mean(bls_leis_relax, wt06),
+            mean_bls_leis_soc = weighted.mean(bls_leis_soc, wt06),
+            mean_bls_leis_sport = weighted.mean(bls_leis_sport, wt06),
+            mean_bls_leis_soccom = weighted.mean(bls_leis_arts, wt06),
+            mean_bls_leis_travel = weighted.mean(bls_leis_travel, wt06),
+            mean_bls_leis_tv = weighted.mean(bls_leis_tv, wt06)) %>%
+  ggplot(mapping = aes(x = mean_bls_leis_soc, y = emp, colour = new_educ)) +
+  geom_point() +
+  facet_wrap(~ gender + new_educ) +
+  labs(
+  title = "Average minutes individuals spend on socializing",
+  y = "Employment Status",
+  x = "Daily Minutes",
+  caption = "Data from ATUS",
+)
+  
 
 ```
 
