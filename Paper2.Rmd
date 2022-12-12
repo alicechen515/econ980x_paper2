@@ -18,6 +18,10 @@ library(ggthemes)
 library(stargazer)
 library(tinytex)
 library(ipumsr)
+library(dplyr)
+library(haven)
+library(survey)
+library(spatstat)
 
 
 
@@ -110,7 +114,7 @@ csv %>%
 csv <- csv %>%
   filter(race %in% c("White only", "Black only", "Asian only", "American Indian, Alaskan Native", "White-American Indian")) 
 
-
+view(c)
 ```
 
 
@@ -141,8 +145,10 @@ csv %>%
 )
 
 
+
 #leisure hours aggregate by gender
 csv %>%
+  filter(year < 2020) %>%
   group_by(gender) %>%
   ggplot(mapping = aes(x = bls_leis) )+
   geom_histogram(binwidth=50) +
@@ -170,17 +176,33 @@ csv %>%
 
 
 
-
 # Median
 csv %>%
-  group_by(year, gender) %>%
-  summarize(median(bls_leis)) %>%
+  filter(year < 2020) %>%
+  group_by(gender, year) %>%
+  summarize(median_leisure = weighted.median(bls_leis, as.numeric(wt06), na.rm=TRUE)) %>%
   clean_names() %>%
-  ggplot(aes(x = year, y = median_bls_leis)) +
+  ggplot(aes(x = year, y = median_leisure)) +
   geom_line() +
   facet_wrap(~ gender) +
   labs(
   title = "Median daily individual leisure minutes by gender",
+  y = "Daily Minutes",
+  x = "Year",
+  caption = "Data from ATUS",
+) 
+
+# mean
+csv %>%
+  filter(year < 2020) %>%
+  group_by(gender,year) %>%
+  summarize(new = weighted.mean(bls_leis, wt06)) %>%
+  clean_names() %>%
+  ggplot(aes(x = year, y = new)) +
+  geom_line() +
+  facet_wrap(~ gender) +
+  labs(
+  title = "Weighted mean daily individual leisure minutes by gender",
   y = "Daily Minutes",
   x = "Year",
   caption = "Data from ATUS",
@@ -191,13 +213,13 @@ csv %>%
   filter(year > 2005) %>%
   filter(year < 2011) %>%
   group_by(year, gender) %>%
-  summarize(median(bls_leis)) %>%
+  summarize(median_bls_leis = weighted.median(bls_leis, wt06)) %>%
   clean_names() %>%
   ggplot(aes(x = year, y = median_bls_leis)) +
   geom_line() +
   facet_wrap(~ gender) +
   labs(
-  title = "Median daily individual leisure minutes by gender",
+  title = "Weighted median daily individual leisure minutes by gender",
   y = "Daily Minutes",
   x = "Year",
   caption = "Data from ATUS",
@@ -208,7 +230,7 @@ csv %>%
   filter(year > 2005) %>%
   filter(year < 2011) %>%
   group_by(year, gender) %>%
-  summarize(mean(bls_leis)) %>%
+  summarize(mean_bls_leis = weighted.mean(bls_leis, wt06)) %>%
   clean_names() %>%
   ggplot(aes(x = year, y = mean_bls_leis)) +
   geom_line() +
@@ -222,44 +244,26 @@ csv %>%
 
 # All Quantile
 csv %>%
+  filter(year < 2020) %>%
   group_by(year, gender) %>%
-  summarize(quantile_25 = quantile(bls_leis, 0.25), quantile_50 = quantile(bls_leis, 0.5), quantile_75 = quantile(bls_leis, 0.75)) %>%
+  summarize(quantile_25 = weighted.quantile(bls_leis, wt06, prob = 0.25), quantile_50 = weighted.quantile(bls_leis, wt06, prob = 0.50), quantile_75 = weighted.quantile(bls_leis, wt06, prob = 0.75)) %>%
   clean_names() %>%
   pivot_longer(quantile_25:quantile_75, names_to = "quantile", values_to = "hours") %>%
   ggplot(aes(x = year, y = hours, group = quantile, colour = quantile)) +
   geom_line() +
     facet_wrap(~ gender) +
   labs(
-  title = "Daily individual leisure minutes by gender",
+  title = "Weighted daily individual leisure minutes by gender",
   y = "Daily Minutes",
   x = "Year",
   caption = "Data from ATUS",
 ) 
 
-
-csv %>%
-  group_by(year) %>%
-  summarize(quantile(bls_leis, 0.25), quantile(bls_leis, 0.5), quantile(bls_leis, 0.75)) %>%
-  clean_names() %>%
-  pivot_longer(!year, names_to = "quantile", values_to = "hours") %>%
-  ggplot(aes(x = year, y = hours, group = quantile)) +
-  geom_line()
-
-
-csv %>%
-  group_by(year) %>%
-  summarize(quantile(bls_leis, 0.25), quantile(bls_leis, 0.5), quantile(bls_leis, 0.75)) %>%
-  clean_names() %>%
-  pivot_longer(!year, names_to = "quantile", values_to = "hours") %>%
-  filter(year > 2005) %>%
-  filter(year < 2011) %>%
-  ggplot(aes(x = year, y = hours, group = quantile)) +
-  geom_line()
-
 # by year, gender
 csv %>%
+  filter(year < 2020) %>%
   group_by(year, gender) %>%
-  summarize(quantile_25 = quantile(bls_leis, 0.25), quantile_50 = quantile(bls_leis, 0.5), quantile_75 = quantile(bls_leis, 0.75)) %>%
+  summarize(quantile_25 = weighted.quantile(bls_leis, wt06, prob = 0.25), quantile_50 = weighted.quantile(bls_leis, wt06, prob = 0.50), quantile_75 = weighted.quantile(bls_leis, wt06, prob = 0.75)) %>%
   clean_names() %>%
   pivot_longer(quantile_25:quantile_75, names_to = "quantile", values_to = "hours") %>%
   filter(year > 2005) %>%
@@ -268,7 +272,7 @@ csv %>%
   geom_line() +
   facet_wrap(~gender) +
     labs(
-  title = "Daily individual leisure minutes by gender",
+  title = "Weighted daily individual leisure minutes by gender",
   y = "Daily Minutes",
   x = "Year",
   caption = "Data from ATUS",
@@ -307,12 +311,13 @@ csv %>%
   
 
 g <- csv %>%
-  lm(formula = bls_leis ~ gender)
+  lm(formula = bls_leis ~ gender, weight = wt06)
+summary(g)
 
 #naive regression of men versus women + year 
 
 y <- csv %>%
-  lm(formula = bls_leis ~ gender + year)
+  lm(formula = bls_leis ~ gender + year, weight = wt06)
 
 # race count
 newcsv <- csv %>%
@@ -320,11 +325,11 @@ newcsv <- csv %>%
 
 newcsv
 newcsv %>%
-  lm(formula = bls_leis ~ gender + year + age + race) 
+  lm(formula = bls_leis ~ gender + year + age + race, weight = wt06) 
 
 # 
 a <- newcsv %>%
-  lm(formula = bls_leis ~ gender + year + age + race) 
+  lm(formula = bls_leis ~ gender + year + age + race, weight = wt06) 
 summary(a)
 
 newcsv
@@ -335,7 +340,7 @@ newcsv1 <- newcsv %>%
   newcsv1
   
 b <- newcsv1 %>%
-  lm(formula = bls_leis ~ gender + year + age + race + new_educ) 
+  lm(formula = bls_leis ~ gender + year + age + race + new_educ, weight = wt06) 
 summary(b)
 
 newcsv1
@@ -344,18 +349,23 @@ newcsv1
  
 
 c <- newcsv1 %>%
-  lm(formula = bls_leis ~ gender + year + age + race + new_educ + nchild) 
+  lm(formula = bls_leis ~ gender + year + age + race + new_educ + nchild, weight = wt06) 
 summary(c)
 
 #marital status
 
 d <- newcsv1 %>%
-  lm(formula = bls_leis ~ gender + year + age + race + new_educ + nchild + marst_simple) 
+  lm(formula = bls_leis ~ gender + year + age + race + new_educ + nchild + marst_simple, weight = wt06) 
 summary(d)
 
 
 stargazer(a, b, c, d, title="Various Models", align=TRUE, type = "text")
 ```
+
+
+
+
+
 ```{r employment}
 
 newcsv1 %>%
